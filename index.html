@@ -132,7 +132,7 @@
           typeof val === "object" ? JSON.stringify(val) : val)}</b></span>`).join("");
       const srcUrl = /^https?:\/\//.test(v.src) ? v.src : `${base}/${v.src}`;
       card.innerHTML = `
-        <video controls preload="metadata" src="${esc(srcUrl)}"></video>
+        <video controls preload="metadata" src="${esc(srcUrl)}"${v.poster ? ` poster="${esc(/^https?:\/\//.test(v.poster) ? v.poster : `${base}/${v.poster}`)}"` : ""}></video>
         <div class="body">
           <h2>${esc(v.model || v.id)}</h2>
           <div class="badges">${badges}</div>
