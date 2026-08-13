@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Video Gallery</title>
+<style>
+  :root{
+    --bg:#0a0a0b; --panel:#121214; --panel-2:#17171a; --border:#242428;
+    --text:#ececed; --muted:#8a8a92; --accent:#6d5efc; --accent-hi:#877bff;
+    --danger:#ff5b6a; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:44px 24px 96px}
+  header{display:flex;align-items:baseline;gap:14px;margin-bottom:8px;flex-wrap:wrap}
+  header .dot{width:11px;height:11px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 16px 2px var(--accent);flex:0 0 auto;align-self:center}
+  header h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-0.01em}
+  header .sub{color:var(--muted);font-size:13px;font-weight:400}
+  header .count{margin-left:auto;font-size:12px;color:var(--muted)}
+
+  /* controls */
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:22px 0 30px}
+  .controls input[type=search]{flex:1 1 260px;min-width:200px;background:var(--panel-2);
+    border:1px solid var(--border);border-radius:10px;color:var(--text);
+    font-family:inherit;font-size:14px;padding:10px 13px;outline:none}
+  .controls input[type=search]:focus{border-color:var(--accent)}
+  .controls select{background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    font-family:inherit;font-size:13px;font-weight:500;border-radius:10px;padding:10px 12px;
+    cursor:pointer;outline:none}
+  .controls select:focus{border-color:var(--accent)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{background:var(--panel-2);border:1px solid var(--border);color:var(--muted);
+    border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:500;cursor:pointer;
+    transition:all .13s;font-family:inherit}
+  .chip:hover{border-color:#33333a;color:var(--text)}
+  .chip.on{background:rgba(109,94,252,.16);border-color:#34305c;color:#b3a9ff}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px}
+  .card{position:relative;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;
+    transition:border-color .15s ease;content-visibility:auto;contain-intrinsic-size:620px}
+  .card:hover{border-color:#33333a}
+  .card video{width:100%;display:block;background:#000;aspect-ratio:104/60;cursor:pointer}
+  .card .body{padding:14px 16px 16px}
+  .card .prompt{font-size:14px;line-height:1.5;color:#d6d6d9;white-space:pre-wrap;word-break:break-word}
+  .sched{display:flex;flex-direction:column;gap:9px}
+  .sched.clamped{max-height:128px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 60%,transparent);mask-image:linear-gradient(180deg,#000 60%,transparent)}
+  .more{background:none;border:0;color:var(--accent-hi);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:6px 0 0;text-align:left}
+  .seg{display:flex;gap:11px}
+  .seg .rng{flex:0 0 auto;font-variant-numeric:tabular-nums;color:#a9a4ff;font-size:11.5px;
+    font-weight:600;padding:2px 8px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:6px;height:fit-content;white-space:nowrap}
+  .seg .txt{font-size:13.5px;line-height:1.45;color:#d0d0d4;word-break:break-word}
+  .card .meta{margin-top:12px;padding-top:11px;border-top:1px solid var(--border);
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:11.5px}
+  .badge{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;
+    padding:2px 7px;color:#a9a4ff;font-weight:500}
+  .mbadge{background:rgba(109,94,252,.16);border:1px solid #34305c;color:#b3a9ff;
+    border-radius:6px;padding:2px 7px;font-weight:600;font-size:11px}
+  .mbadge.v2{background:rgba(61,220,132,.14);border-color:#2c5a41;color:#8ff0b8}
+  .mbadge.holocine{background:rgba(255,180,84,.14);border-color:#5a4a2c;color:#f0d08f}
+  .mbadge.custom{background:rgba(94,200,252,.14);border-color:#2c4a5a;color:#8fd8f0}
+  .stats{margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    font-size:11px;color:#6f6f77;display:flex;flex-wrap:wrap;gap:6px 14px;line-height:1.4}
+  .stats span b{color:#9a9aa2;font-weight:600}
+  .stats .cold{color:#ffb454;border:1px solid rgba(255,180,84,.35);border-radius:5px;padding:0 5px;font-weight:600}
+
+  /* benchmark card */
+  .card.bench{border-color:#3a3358;background:linear-gradient(180deg,#15131f,var(--panel))}
+  .bench-head{padding:16px 16px 12px;display:flex;align-items:center;gap:10px}
+  .bench-head .btag{background:rgba(109,94,252,.18);border:1px solid #3a3368;color:#b3a9ff;
+    font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+  .bench-head .bt{font-size:13px;color:var(--muted)}
+  .bench-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .bstat{background:var(--panel);padding:12px 16px}
+  .bstat .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .bstat .v{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:17px;font-weight:600;color:var(--text);margin-top:3px}
+  .bstat .v small{color:var(--muted);font-size:12px;font-weight:400}
+  .bench-env{padding:12px 16px 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#7d7d86;line-height:1.6}
+  .bench-env b{color:#9a9aa2;font-weight:600}
+  .bench-env .lk{color:#ffb454}
+  .bench-env .lkok{color:#3ddc84}
+
+  .empty{color:var(--muted);font-size:14px;padding:48px 2px}
+  .foot{margin-top:52px;color:#55555c;font-size:11.5px;text-align:center}
+  a{color:var(--accent-hi);text-decoration:none}
+  @media (max-width:600px){
+    .wrap{padding:24px 14px 64px}
+    .controls{margin:16px 0 20px}
+    .grid{grid-template-columns:1fr;gap:14px}
+    header .count{width:100%;margin-left:25px}
+    .card .body{padding:12px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="dot"></span>
+    <h1>Video Gallery</h1>
+    <span class="sub">long-video generation — prompt timelines &amp; benchmarks</span>
+    <a href="/engine" style="margin-left:auto;background:rgba(109,94,252,.16);border:1px solid #34305c;color:#b3a9ff;border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:600;text-decoration:none">&#9881; Engine — generate</a>
+    <span class="count" id="count"></span>
+  </header>
+
+  <div class="controls">
+    <input type="search" id="q" placeholder="Search prompts…" autocomplete="off" />
+    <div class="chips" id="modelChips"></div>
+    <select id="sort">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="longest">Longest video</option>
+      <option value="fastest">Fastest gen</option>
+    </select>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">No videos match.</div>
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const $ = (id)=>document.getElementById(id);
+let ALL = [];
+let activeModel = 'all';
+let q = '';
+let sortMode = 'newest';
+let mediaObserver;
+
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fmtTime(iso){try{const d=new Date(iso);return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return iso||'';}}
+function rangeLabel(s){const f=(x)=>Number.isInteger(x)?x:(+x).toFixed(1);return `${f(s.start_s)}–${f(s.end_s)}s`;}
+
+function modelClass(e){
+  const id=(e.model_id||e.model||'').toLowerCase();
+  if(id.includes('2.0')||id.includes('longlive-2'))return 'v2';
+  if(id.includes('holocine'))return 'holocine';
+  if(id.includes('longlive'))return '';
+  return 'custom';
+}
+function modelLabel(e){ return e.model || e.model_id || 'model'; }
+function familyOf(e){ return modelLabel(e).split('—')[0].split('·')[0].trim(); }
+
+function scheduleHtml(e){
+  if(e.schedule&&e.schedule.length){
+    const segs=e.schedule.map(s=>`<div class="seg"><span class="rng">${rangeLabel(s)}</span><span class="txt">${escapeHtml(s.prompt)}</span></div>`).join('');
+    if(e.schedule.length>4){
+      return `<div class="sched clamped">${segs}</div>
+        <button class="more" onclick="const s=this.previousElementSibling;const c=s.classList.toggle('clamped');this.textContent=c?'Show all ${e.schedule.length} scenes':'Collapse';">Show all ${e.schedule.length} scenes</button>`;
+    }
+    return `<div class="sched">${segs}</div>`;
+  }
+  return `<div class="prompt">${escapeHtml(e.prompt||'')}</div>`;
+}
+function statsHtml(e){
+  const m=e.metrics; if(!m)return '';
+  const p=[];
+  if(m.warm===false)p.push(`<span class="cold" title="GPU was cold — no prior generation this session">cold start</span>`);
+  if(m.t_first_block!=null)p.push(`<span>TTFF <b>${(+m.t_first_block).toFixed(2)}s</b></span>`);
+  if(m.denoise_fps!=null)p.push(`<span>denoise <b>${m.denoise_fps} fps</b></span>`);
+  if(m.e2e_fps!=null)p.push(`<span>e2e <b>${m.e2e_fps} fps</b></span>`);
+  if(m.decode_share!=null)p.push(`<span>decode <b>${Math.round(m.decode_share*100)}%</b></span>`);
+  if(!p.length)return '';
+  const c=m.conditions;
+  const tip=c?`GPU at generation start — SM clock ${c.sm_clock_mhz} MHz, ${c.temp_c}°C, ${c.power_w} W`:'GPU conditions unavailable';
+  return `<div class="stats" title="${tip}">${p.join('')}</div>`;
+}
+function benchCardHtml(e){
+  const r=e.report||{}, s=r.stats||{}, eb=r.env_before||{}, ea=r.env_after||{};
+  const cell=(k,st,unit,dec)=>{
+    if(!st||st.mean==null)return `<div class="bstat"><div class="k">${k}</div><div class="v">—</div></div>`;
+    const mean=dec!=null?(+st.mean).toFixed(dec):st.mean, std=dec!=null?(+st.std).toFixed(dec):st.std;
+    return `<div class="bstat"><div class="k">${k}</div><div class="v">${mean}<small> ± ${std} ${unit||''}</small></div></div>`;
+  };
+  const locked=r.clocks_locked?`<span class="lkok">locked @ ${r.clock_target_mhz||'?'} MHz</span>`:`<span class="lk">not locked (dynamic clocks)</span>`;
+  return `<div class="bench-head"><span class="btag">Benchmark</span>
+      <span class="bt">${modelLabel(e)} · ${r.reps||e.reps}× · ${r.duration_s||e.duration_s}s · ${r.frames||'?'} frames</span></div>
+    <div class="bench-grid">
+      ${cell('Denoise FPS',s.denoise_fps,'fps',2)}
+      ${cell('End-to-end FPS',s.e2e_fps,'fps',2)}
+      ${cell('TTFF',s.t_first_block,'s',3)}
+      ${cell('Decode share',s.decode_share!=null?{mean:s.decode_share.mean*100,std:s.decode_share.std*100,n:s.decode_share.n}:null,'%',1)}
+    </div>
+    <div class="bench-env">
+      <div><b>${eb.gpu||'GPU'}</b> · driver ${eb.driver||'?'} · clocks ${locked}</div>
+      <div>clock ${eb.sm_clock_mhz??'?'}→${ea.sm_clock_mhz??'?'} MHz · temp ${eb.temp_c??'?'}→${ea.temp_c??'?'}°C · power ${eb.power_w??'?'}→${ea.power_w??'?'} W · seeds ${r.seed_base}+i</div>
+      <div>${escapeHtml(r.prompt||'')}</div>
+    </div>`;
+}
+
+function matches(e){
+  if(activeModel!=='all' && familyOf(e)!==activeModel) return false;
+  if(q){
+    const hay=((e.prompt||'')+' '+(e.schedule||[]).map(s=>s.prompt).join(' ')+' '+modelLabel(e)).toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+function sortFn(a,b){
+  switch(sortMode){
+    case 'oldest': return (a.timestamp||'').localeCompare(b.timestamp||'');
+    case 'longest': return (b.duration_s||0)-(a.duration_s||0);
+    case 'fastest': return (a.elapsed_s||1e9)-(b.elapsed_s||1e9);
+    default: return (b.timestamp||'').localeCompare(a.timestamp||'');
+  }
+}
+
+function render(){
+  const grid=$('grid');
+  const items=ALL.filter(matches).sort(sortFn);
+  $('empty').style.display=items.length?'none':'block';
+  $('count').textContent=`${items.length} of ${ALL.length}`;
+  grid.innerHTML='';
+  for(const e of items){
+    const card=document.createElement('div');
+    if(e.kind==='benchmark'){
+      card.className='card bench';
+      card.innerHTML=benchCardHtml(e);
+      grid.appendChild(card); continue;
+    }
+    card.className='card';
+    const media=`<video data-src="${e.src}" loop muted playsinline controls preload="none"
+        onmouseenter="this.play().catch(()=>{})" onmouseleave="this.pause()"></video>`;
+    const bits=[];
+    bits.push(`<span class="mbadge ${modelClass(e)}">${escapeHtml(modelLabel(e))}</span>`);
+    bits.push(`<span class="badge">${e.multi?((e.schedule?e.schedule.length:'multi')+' prompts'):'single'}</span>`);
+    if(e.duration_s!=null)bits.push(`<span>${e.duration_s}s video</span>`);
+    if(e.timestamp)bits.push(`<span>${fmtTime(e.timestamp)}</span>`);
+    if(e.elapsed_s!=null)bits.push(`<span>gen ${e.elapsed_s}s</span>`);
+    card.innerHTML=media+`<div class="body">${scheduleHtml(e)}<div class="meta">${bits.join('')}</div>${statsHtml(e)}</div>`;
+    grid.appendChild(card);
+  }
+  mediaObserver?.disconnect();
+  mediaObserver=new IntersectionObserver(entries=>{
+    for(const x of entries){
+      if(!x.isIntersecting)continue;
+      const v=x.target;
+      if(!v.src){v.src=v.dataset.src;v.load();}
+      mediaObserver.unobserve(v);
+    }
+  },{rootMargin:'400px 0px'});
+  grid.querySelectorAll('video[data-src]').forEach(v=>mediaObserver.observe(v));
+}
+
+function buildModelChips(){
+  const models=[...new Set(ALL.map(familyOf))].sort();
+  const chips=$('modelChips');
+  const mk=(label,val)=>{const c=document.createElement('button');c.className='chip'+(val===activeModel?' on':'');
+    c.textContent=label;c.onclick=()=>{activeModel=val;buildModelChips();render();};return c;};
+  chips.innerHTML='';
+  chips.appendChild(mk('All models','all'));
+  for(const m of models) chips.appendChild(mk(m,m));
+}
+
+$('q').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();render();});
+$('sort').addEventListener('change',e=>{sortMode=e.target.value;render();});
+
+fetch('videos.json').then(r=>r.json()).then(data=>{
+  ALL = Array.isArray(data)?data:(data.videos||[]);
+  $('foot').innerHTML = data.generated_at
+    ? `${ALL.length} items · updated ${fmtTime(data.generated_at)}`
+    : `${ALL.length} items`;
+  buildModelChips();
+  render();
+}).catch(err=>{
+  $('empty').style.display='block';
+  $('empty').textContent='Could not load videos.json — '+err.message;
+});
+</script>
+</body>
+</html>
